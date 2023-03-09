@@ -37,49 +37,27 @@ def single_gpu_test(model,
     results = []
     dataset = data_loader.dataset
     prog_bar = mmcv.ProgressBar(len(dataset))
+    
+    def save_pickle(filename, object):
+        print(f"Save {filename} as pickle ...")
+        with open(filename, 'wb')  as f:
+            pickle.dump(object, f, pickle.HIGHEST_PROTOCOL)
+
+    aie_results = []
+    import os
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             result = model(return_loss=False, **data)
+        img_metas = data['img_metas'].data[0]
+        for idx in range(result.shape[0]):
+            aie_results.append(dict(filename=os.path.basename(img_metas[idx]['filename']), feature=result[idx].cpu().numpy()))
 
         batch_size = len(result)
         results.extend(result)
 
-        if show or out_dir:
-            scores = np.vstack(result)
-            pred_score = np.max(scores, axis=1)
-            pred_label = np.argmax(scores, axis=1)
-            pred_class = [model.CLASSES[lb] for lb in pred_label]
-
-            img_metas = data['img_metas'].data[0]
-            imgs = tensor2imgs(data['img'], **img_metas[0]['img_norm_cfg'])
-            assert len(imgs) == len(img_metas)
-
-            for i, (img, img_meta) in enumerate(zip(imgs, img_metas)):
-                h, w, _ = img_meta['img_shape']
-                img_show = img[:h, :w, :]
-
-                ori_h, ori_w = img_meta['ori_shape'][:-1]
-                img_show = mmcv.imresize(img_show, (ori_w, ori_h))
-
-                if out_dir:
-                    out_file = osp.join(out_dir, img_meta['ori_filename'])
-                else:
-                    out_file = None
-
-                result_show = {
-                    'pred_score': pred_score[i],
-                    'pred_label': pred_label[i],
-                    'pred_class': pred_class[i]
-                }
-                model.module.show_result(
-                    img_show,
-                    result_show,
-                    show=show,
-                    out_file=out_file,
-                    **show_kwargs)
-
         batch_size = data['img'].size(0)
         prog_bar.update(batch_size)
+    save_pickle("mmcls_ViT-L-p-16-384-ft-in1k.pickle", aie_results)
     return results
 
 

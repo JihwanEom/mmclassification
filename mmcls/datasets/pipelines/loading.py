@@ -3,7 +3,7 @@ import os.path as osp
 
 import mmcv
 import numpy as np
-
+from PIL import Image
 from ..builder import PIPELINES
 
 
@@ -68,3 +68,33 @@ class LoadImageFromFile(object):
                     f"color_type='{self.color_type}', "
                     f'file_client_args={self.file_client_args})')
         return repr_str
+    
+
+@PIPELINES.register_module()
+class AIELoadImageFromFile(LoadImageFromFile):
+    def __call__(self, results: dict):
+
+        if results['img_prefix'] is not None:
+            filename = osp.join(results['img_prefix'],
+                                results['img_info']['filename'])
+        else:
+            filename = results['img_info']['filename']
+            
+        img = Image.open(filename)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        img = np.array(img)
+        if self.to_float32:
+            img = img.astype(np.float32)
+
+        results['filename'] = filename
+        results['ori_filename'] = results['img_info']['filename']
+        results['img'] = img
+        results['img_shape'] = img.shape
+        results['ori_shape'] = img.shape
+        num_channels = 1 if len(img.shape) < 3 else img.shape[2]
+        results['img_norm_cfg'] = dict(
+            mean=np.zeros(num_channels, dtype=np.float32),
+            std=np.ones(num_channels, dtype=np.float32),
+            to_rgb=False)
+        return results

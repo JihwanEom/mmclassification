@@ -17,7 +17,9 @@ from mmcls.models import build_classifier
 from mmcls.utils import (auto_select_device, get_root_logger,
                          setup_multi_processes, wrap_distributed_model,
                          wrap_non_distributed_model)
-
+from PIL import Image, ImageFile
+Image.MAX_IMAGE_PIXELS = 933120000
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def parse_args():
     parser = argparse.ArgumentParser(description='mmcls test model')
@@ -98,8 +100,8 @@ def parse_args():
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
 
-    assert args.metrics or args.out, \
-        'Please specify at least one of output path and evaluation metrics.'
+    # assert args.metrics or args.out, \
+        # 'Please specify at least one of output path and evaluation metrics.'
 
     return args
 

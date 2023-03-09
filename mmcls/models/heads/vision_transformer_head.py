@@ -103,18 +103,17 @@ class VisionTransformerClsHead(ClsHead):
                   float and the dimensions are ``(num_samples, num_classes)``.
         """
         x = self.pre_logits(x)
-        cls_score = self.layers.head(x)
+        return x
+        # if softmax:
+        #     pred = (
+        #         F.softmax(cls_score, dim=1) if cls_score is not None else None)
+        # else:
+        #     pred = cls_score
 
-        if softmax:
-            pred = (
-                F.softmax(cls_score, dim=1) if cls_score is not None else None)
-        else:
-            pred = cls_score
-
-        if post_process:
-            return self.post_process(pred)
-        else:
-            return pred
+        # if post_process:
+        #     return self.post_process(pred)
+        # else:
+        #     return pred
 
     def forward_train(self, x, gt_label, **kwargs):
         x = self.pre_logits(x)
