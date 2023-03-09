@@ -4,11 +4,10 @@ _base_ = [
     '../_base_/schedules/imagenet_bs4096_AdamW.py',
     '../_base_/default_runtime.py'
 ]
-
 model = dict(backbone=dict(img_size=336))
 
 img_norm_cfg = dict(
-    mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_rgb=True)
+    mean=[122.7709383 , 116.7460125 , 104.09373615], std=[68.5005327 , 66.6321579 , 70.32316305], to_rgb=True)
 
 train_pipeline = [
     dict(type='AIELoadImageFromFile'),

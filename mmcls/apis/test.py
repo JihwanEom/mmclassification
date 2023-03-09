@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import os
 import os.path as osp
 import pickle
 import shutil
@@ -11,8 +12,20 @@ import torch
 import torch.distributed as dist
 from mmcv.image import tensor2imgs
 from mmcv.runner import get_dist_info
-
-
+seed = 0
+deterministic = True
+import os
+import random
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+os.environ['PYTHONHASHSEED'] = str(seed)
+if deterministic:
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+        
 def single_gpu_test(model,
                     data_loader,
                     show=False,
@@ -38,26 +51,30 @@ def single_gpu_test(model,
     dataset = data_loader.dataset
     prog_bar = mmcv.ProgressBar(len(dataset))
     
+    def load_pickle(filename):
+        print(f"Load {filename} as object ..")
+        with open(filename, 'rb')  as f:
+            data = pickle.load(f)
+        return data
+
     def save_pickle(filename, object):
         print(f"Save {filename} as pickle ...")
         with open(filename, 'wb')  as f:
             pickle.dump(object, f, pickle.HIGHEST_PROTOCOL)
 
     aie_results = []
-    import os
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             result = model(return_loss=False, **data)
         img_metas = data['img_metas'].data[0]
         for idx in range(result.shape[0]):
             aie_results.append(dict(filename=os.path.basename(img_metas[idx]['filename']), feature=result[idx].cpu().numpy()))
-
         batch_size = len(result)
-        results.extend(result)
+        results.extend(result.cpu())
 
         batch_size = data['img'].size(0)
         prog_bar.update(batch_size)
-    save_pickle("mmcls_ViT-L-p-16-384-ft-in1k.pickle", aie_results)
+    breakpoint()
     return results
 
 

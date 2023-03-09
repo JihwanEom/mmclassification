@@ -22,8 +22,7 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type='AIELoadImageFromFile'),
-    dict(type='Resize', size=(384, -1), backend='pillow'),
-    dict(type='CenterCrop', crop_size=384),
+    dict(type='Resize', size=(384, 384), backend='pillow'),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='ImageToTensor', keys=['img']),
     dict(type='Collect', keys=['img'])
